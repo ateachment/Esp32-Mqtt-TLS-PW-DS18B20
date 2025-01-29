@@ -3,6 +3,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
+
 #include <Settings.h>
 
 const char* ssid = SSID;
@@ -19,8 +20,20 @@ const char* ca_cert = CA_CERT
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <TM1637.h>
+#include <Adafruit_NeoPixel.h>
 
-// GPIO where the DS18B20 is connected to
+#define PIN            3 //digitaler PWM Pin 3 am Arduino Nano
+#define NUMPIXELS      1 //Anzahl der angeschlossenen RGB LEDs
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+// TM1637 Display Driver connection GPIO
+#define CLK 15
+#define DIO 16
+
+TM1637 tm(CLK, DIO);
+
+// GPIO where the DS18B20 digital temperature sensor is connected to
 const int oneWireBus = 4;     
 
 // Setup a oneWire instance to communicate with any OneWire devices
@@ -102,8 +115,16 @@ void reconnect() {
 }
 
 void setup() {
+  // initialize NeoPixel library for rgb led
+  pixels.begin(); 
+  pixels.setPixelColor(0, pixels.Color(0,255,0));  //green,RED,blue
+  pixels.show();
+  // start 7-seg-Display
+  tm.begin();
+  tm.setBrightness(1);
+  tm.display("8888");
   // Start the Serial Monitor
-  Serial.begin(115200);
+  Serial.begin(9600);
   setup_wifi();
   espClient.setCACert(ca_cert);
   client.setServer(mqtt_server, 8883);
@@ -115,12 +136,19 @@ void setup() {
 
 void loop() {
   if (!client.connected()) {
+    pixels.setPixelColor(0, pixels.Color(0,0,255));  //green,red,BLUE
+    pixels.show();
     reconnect();
   }
-  client.loop();
+  pixels.setPixelColor(0, pixels.Color(255,0,0));  //GREEN,red,blue
+  pixels.show();
+  //client.loop();  // checking for mqtt messages (there should not come something)
+  pixels.setPixelColor(0, pixels.Color(0,0,0));  //green,red,blue 
+  pixels.show();
 
   sensors.requestTemperatures(); 
   float temperatureC = sensors.getTempCByIndex(0);
+  tm.display(temperatureC);
   Serial.print(temperatureC);
   Serial.println("ºC");
   snprintf (msg, MSG_BUFFER_SIZE, "%.2f", temperatureC);  // i.e. 19.91
