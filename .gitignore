@@ -1,4 +1,6 @@
 lib/Settings/settings.h
+lib/Settings/settings-bananapi.h
+lib/Settings/settings-piEick.h
 .pio
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
